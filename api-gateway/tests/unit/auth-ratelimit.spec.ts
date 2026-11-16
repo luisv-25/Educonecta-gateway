@@ -21,6 +21,10 @@ describe("JWT y límite de peticiones del gateway (unitarias)", () => {
     expect(isPublicRoute("GET", "/api/v1/tutors?subjectId=1")).toBe(true);
     expect(isPublicRoute("GET", "/api/v1/tutors/9/profile")).toBe(true);
     expect(isPublicRoute("GET", "/api/v1/shared-links/abc")).toBe(true);
+    expect(isPublicRoute("GET", "/api/v1/bookings?tutorId=1")).toBe(true);
+    expect(isPublicRoute("GET", "/api/v1/bookings/5")).toBe(true);
+    expect(isPublicRoute("POST", "/api/v1/bookings")).toBe(false); // crear exige token
+    expect(isPublicRoute("PATCH", "/api/v1/bookings/5/accept")).toBe(false);
     expect(isPublicRoute("PATCH", "/api/v1/tutors/9/profile")).toBe(false); // escribir exige token
     expect(isPublicRoute("POST", "/api/v1/subjects")).toBe(false);
     expect(isPublicRoute("PATCH", "/api/v1/users/9/availability")).toBe(false);
