@@ -33,6 +33,7 @@ export function verifyJwt(token: string, secret: string, nowSeconds = Math.floor
 const PUBLIC: Array<[string, RegExp]> = [
   ["POST", /^\/api\/v1\/auth\/(register|login)$/],
   ["GET", /^\/api\/v1\/subjects$/],
+  ["GET", /^\/api\/v1\/bookings(\/[^/]+)?$/], // el frontend lista/consulta reservas sin token
   ["GET", /^\/api\/v1\/tutors(\/[^/]+\/(profile|ratings))?$/],
   ["GET", /^\/api\/v1\/users(\/[^/]+(\/availability)?)?$/],
   ["GET", /^\/api\/v1\/sessions\/booking\/[^/]+$/],
