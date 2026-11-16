@@ -1,0 +1,71 @@
+name: CI - api-gateway
+
+# CI: se ejecuta en cada push a develop/feature/hotfix y en cada Pull Request hacia main o
+# develop. Los pushes a main los ejecuta deploy.yml (que reutiliza este mismo workflow y,
+# SOLO si pasa, despliega). Si una prueba falla, el workflow falla y no se despliega nada.
+on:
+  push:
+    branches: [develop, "feature/**", "hotfix/**"]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+
+jobs:
+  test:
+    name: Pruebas unitarias, integración y cobertura
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Lint (si el proyecto define el script)
+        run: npm run lint --if-present
+
+      - name: Compilar (tsc)
+        run: npm run build
+
+      - name: Pruebas unitarias
+        run: npm run test:unit -- --verbose
+
+      - name: Pruebas de integración
+        run: npm run test:integration -- --verbose
+
+      - name: Reporte de cobertura (todas las pruebas)
+        run: npm run test:cov
+
+      - name: Resumen de cobertura en el job
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const s=require('./coverage/coverage-summary.json').total; const l=['## Cobertura de api-gateway','','| Métrica | % |','|---|---|']; for (const k of ['lines','statements','functions','branches']) l.push('| '+k+' | '+s[k].pct+' |'); console.log(l.join('\\n'))" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar reporte de cobertura como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-api-gateway
+          path: ./coverage
+          if-no-files-found: warn
+
+  docker:
+    name: Validar imagen Docker
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Build de la imagen Docker
+        run: docker build -t api-gateway:ci .
